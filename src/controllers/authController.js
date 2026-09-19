@@ -102,36 +102,39 @@ export const requestResetEmail = async (req, res, next) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) {
-      throw createHttpError(404, 'User not found');
-    }
 
-    const resetToken = jwt.sign(
-      { sub: user._id, email },
-      process.env.JWT_SECRET,
-      { expiresIn: '15m' },
-    );
+    if (user) {
+      const resetToken = jwt.sign(
+        { sub: user._id, email },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' },
+      );
 
-    const templatePath = path.join(
-      __dirname,
-      '../templates/reset-password-email.html',
-    );
-    const templateSource = await fs.readFile(templatePath, 'utf-8');
-    const template = handlebars.compile(templateSource);
+      const templatePath = path.join(
+        __dirname,
+        '../templates/reset-password-email.html',
+      );
+      const templateSource = await fs.readFile(templatePath, 'utf-8');
+      const template = handlebars.compile(templateSource);
 
-    const resetLink = `${process.env.FRONTEND_DOMAIN}/reset-password?token=${resetToken}`;
+      const resetLink = `${process.env.FRONTEND_DOMAIN}/reset-password?token=${resetToken}`;
 
-    const html = template({ email, link: resetLink });
+      const html = template({ name: user.username, email, link: resetLink });
 
-    try {
-      await sendEmail({
-        to: email,
-        subject: 'Скидання пароля',
-        html,
-      });
-    } catch (sendError) {
+      try {
+        await sendEmail({
+          from: process.env.SMTP_FROM,
+          to: email,
+          subject: 'Скидання пароля',
+          html,
+        });
+      } catch (sendError) {
         console.error('sendEmail error:', sendError);
-      throw createHttpError(500, 'Failed to send the email, please try again later.');
+        throw createHttpError(
+          500,
+          'Failed to send the email, please try again later.',
+        );
+      }
     }
 
     res.status(200).json({

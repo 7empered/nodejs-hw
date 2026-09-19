@@ -31,10 +31,11 @@ const startServer = async () => {
   app.use(userRouter);
 
   // celebrate validation errors
-  app.use(celebrateErrors());
+  app.use(notFoundHandler);
+
 
   // 404 handler - must be after all valid routes
-  app.use(notFoundHandler);
+  app.use(celebrateErrors());
 
   // Error handler - must be the last middleware in the stack
   app.use(errorHandler);

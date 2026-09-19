@@ -1,23 +1,15 @@
-export const sendEmail = async ({ to, subject, html }) => {
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'api-key': process.env.BREVO_API_KEY,
-    },
-    body: JSON.stringify({
-      sender: { email: process.env.SMTP_FROM },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-    }),
-  });
+import nodemailer from 'nodemailer';
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(
-      `Brevo API error: ${response.status} ${response.statusText} — ${errorBody}`,
-    );
-  }
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
+
+export const sendEmail = async (options) => {
+  const info = await transporter.sendMail(options);
+  return info;
 };
